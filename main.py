@@ -18,7 +18,7 @@ code = "d15ddd6aad244560be73ac7884b98fcc"
 
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.INFO)
-handler = logging.FileHandler('autobid.log', 'w', 'utf-8')
+handler = logging.FileHandler('autobid.log', 'r+', 'utf-8')
 formatter = logging.Formatter('[%(asctime)s] - [%(levelname)s] - %(message)s')
 handler.setFormatter(formatter)
 root_logger.addHandler(handler)
@@ -166,7 +166,7 @@ def tmp_bid():
 print(str(datetime.now()))
 while True:
      bid_aa()
-     time.sleep(1)
+     time.sleep(0.1)
 
 
 

@@ -82,7 +82,7 @@ class openapi_client:
 
         while status_code != 200 or response_str is None:
             print("Servie unavailable for a while:", status_code)
-            time.sleep(15)
+            time.sleep(10)
             status_code, response_str = http_client.http_post(url,data.encode('utf-8'),headers=headers)
         
         return response_str
