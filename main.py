@@ -16,8 +16,12 @@ appid="c1cd94864da5425499655ee6d8f38b6e"
 #https://ac.ppdai.com/oauth2/login?AppID=c1cd94864da5425499655ee6d8f38b6e&ReturnUrl=http://antdiaries.com
 code = "d15ddd6aad244560be73ac7884b98fcc"
 
-logging.basicConfig(level=logging.INFO, filename='autobid.log',
-    format='[%(asctime)s] - [%(levelname)s] - %(message)s')
+root_logger= logging.getLogger()
+root_logger.setLevel(logging.INFO)
+handler = logging.FileHandler('autobid.log', 'w', 'utf-8')
+formatter = logging.Formatter('[%(asctime)s] - [%(levelname)s] - %(message)s')
+handler.setFormatter(formatter)
+root_logger.addHandler(handler)
 
 def get_authorize_str():
     try:
@@ -85,7 +89,7 @@ def make_bid(listing_id, amount):
         return list_result_obj
     else:
         logging.warning("Warning: fail to make bid %s. Reason: %s", listing_id, list_result_obj["ResultMessage"])
-        print("Warning: fail to make bid %s. Reason: %s" % (listing_id, list_result_obj["ResultMessage"]))
+        print("Warning: fail to make bid %s. Reason: %s. Code: %s" % (listing_id, list_result_obj["ResultMessage"], list_result_obj["Result"]))
         return None
 
 
@@ -156,11 +160,10 @@ def tmp_bid():
         return None
 
     bid_list = list_result_obj["LoanInfos"]
-    obj = make_bid(bid_list.get(0)["ListingId"], -1)
+    obj = make_bid(bid_list[0]["ListingId"], -1)
     
 
 print(str(datetime.now()))
-#tmp_bid()
 while True:
      bid_aa()
      time.sleep(1)
