@@ -1,17 +1,9 @@
 #coding=utf-8
-# import urllib2
-
-# from urllib2 import Request  # Python 2
-
 import urllib
 import urllib.request
 
-#网络请求操作类
 class http_client:
 
-    '''
-        用于请求的Headers
-    '''
     REQUEST_HEADER = {'Connection': 'keep-alive',
                   'Cache-Control': 'max-age=0',
                   #'Accept-Encoding': 'gzip, deflate, sdch',
@@ -19,7 +11,10 @@ class http_client:
                   'Content-Type':'application/json;charset=utf-8'
                   }
 
-    # return (status_code, response_str)
+    
+    '''
+    return (status_code, response_str)
+    '''
     @staticmethod
     def http_post(url,data,headers={}):
         try:

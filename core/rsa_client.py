@@ -1,29 +1,21 @@
 # coding=utf-8
 from builtins import str  #python3
-# from __builtin__ import str 
-
 import base64 
 import rsa
 from . import Global
  
-# rsa操作类
+
 class rsa_client:
     
-    '''''
-    RSA签名
-    '''
     @staticmethod
     def sign(signdata):
-        '''''
-        @param signdata: 需要签名的字符串
-        '''
         signdata = signdata.lower()
         PrivateKey = rsa.PrivateKey.load_pkcs1(Global.privatekey)
         # print(PrivateKey)
         tmp = rsa.sign(signdata.encode('utf8'), PrivateKey, 'SHA-1')
         signature = base64.b64encode(tmp)
         return signature
-#       
+    
 
     @staticmethod
     def sort(dicts):

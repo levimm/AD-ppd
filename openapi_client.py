@@ -11,18 +11,11 @@ except ImportError:
     from io import StringIO
 import json
 
-'''
-OpenAapi提交请求客户端
-'''
+
 class openapi_client:
-    '''
-    oauth2授权地址
-    '''
+    
     AUTHORIZE_URL = "https://ac.ppdai.com/oauth2/authorize"
     
-    '''
-       刷新Token地址
-    '''
     REFRESHTOKEN_URL = "https://ac.ppdai.com/oauth2/refreshtoken"
 
 
@@ -31,11 +24,6 @@ class openapi_client:
         Constructor
         '''
     
-    '''
-        获取授权
-    AppId 应用ID
-    code 授权码
-    '''
     @staticmethod
     def authorize(appid,code):
         data = "{\"AppID\":\"%s\",\"Code\":\"%s\"}" % (appid,code)
@@ -46,12 +34,7 @@ class openapi_client:
         # print("authorize_data:%s" % (result))
         return result
         
-    '''
-        刷新AccessToken
-    AppId 应用ID
-    OpenId 用户唯一标识
-    RefreshToken 刷新令牌Token
-    '''
+
     @staticmethod
     def refresh_token(appid,openid,refreshtoken):
         data = "{\"AppID\":\"%s\",\"OpenId\":\"%s\",\"RefreshToken\":\"%s\"}" % (appid,openid,refreshtoken)
@@ -59,14 +42,7 @@ class openapi_client:
         print("refresh_token_data:%s" % (result))
         return result
     
-    '''
-        向拍拍贷网关发送请求
-    Url 请求地址
-    Data 请求报文
-    AppId 应用编号
-    Sign 签名信息
-    AccessToken 访问令牌
-    '''
+    
     @staticmethod
     def send(url,data,appid,sign,accesstoken=''):
         utctime = datetime.datetime.utcnow()
