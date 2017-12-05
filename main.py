@@ -142,10 +142,30 @@ def bid_aa():
 
 
 
+###
+# tmp bid
+###
+def tmp_bid():
+    request_date = str(datetime.now() + timedelta(minutes=-5))
+    init_index = 1
+    list_result_obj = get_loan_list(init_index, request_date)
+
+    if len(list_result_obj["LoanInfos"]) == 0:
+        logging.info("Empty Loan list.")
+        print("Empty Loan list %s" % str(datetime.now()))
+        return None
+
+    bid_list = list_result_obj["LoanInfos"]
+    obj = make_bid(bid_list.get(0)["ListingId"], -1)
+    
+
 print(str(datetime.now()))
+#tmp_bid()
 while True:
-    bid_aa()
-    time.sleep(1)
+     bid_aa()
+     time.sleep(1)
+
+
 
 
 #加密/解密
