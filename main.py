@@ -178,46 +178,87 @@ def bid_aa():
 # checkSpecific_constraints
 ###
 
-def checkSpecific_constraints(one_loain):
-    if one_loain["CreditCode"] == "C" and one_loain["Rate"] >= 8:
-        return True
-    else:
+def checkSpecific_constraints(loan):
+    if loan["CurrentRate"] < 16:
         return False
 
+    # first filter on educate validate
+    if loan["GraduateSchool"] is None:
+        return False
+
+    # second filter on OverdueMoreCount
+    if loan["OverdueMoreCount"] > 0:
+        return False
+    if loan["OverdueLessCount"] > 5:
+        return False
+
+    # third filter on new guys
+    if loan["NormalCount"] < 3 or loan["SuccessCount"] < 3:
+        return False
+
+    # fourth filter on large amount
+    if loan["OwingAmount"] == 0 and loan["Amount"] >= 5000:
+        return False
+    if loan["Amount"] > 10000:
+        return False
+    if loan["OwingAmount"]/loan["HighestDebt"] > 0.8:
+        return False
+    if loan["Amount"]/loan["HighestPrincipal"] > 0.85:
+        return False
+
+    # if loan["CreditCode"] == "A":
+    #     #if loan["SuccessCount"] >= 3 and loan["OverdueLessCount"] <= 5 and loan["NormalCount"] >=3
+    #     return True
+    # elif loan["CreditCode"] == "B":
+    #     if loan["SuccessCount"] >= 5 and loan["OverdueLessCount"] <= 3 and loan["NormalCount"] >=5:
+    #         return True
+    # elif loan["CreditCode"] == "C":
+    #     if loan["SuccessCount"] >= 7 and loan["OverdueLessCount"] <= 1 and loan["NormalCount"] >=7:
+    #         return True
+    # else:
+    #     return False
+
+    return True
 
 ###
 # tmp bid
 ###
 def bid_specific_constraints():
-    request_date = str(datetime.now() + timedelta(minutes=-5))
+    request_date = str(datetime.now() + timedelta(minutes=-10))
     init_index = 1
 
     list_result_obj = get_loan_list(init_index, request_date)
-    loan_list_length = len(list_result_obj["LoanInfos"])
-    listingIds = []
+    loan_info_list = list_result_obj["LoanInfos"]
+    loan_list_length = len(loan_info_list)
+    if loan_list_length == 0:
+        return
+
     query_count = math.ceil(loan_list_length / 10)
     for i in range(0, query_count):
         listingIds = []
-        period = loan_list_length - 10*i
+        period = loan_list_length - 10 * i
         period_length = 10
         if period < 10:
             period_length = period
 
         for j in range(0, period_length):
-            if list_result_obj["LoanInfos"][10*i+j] is not None:
-                listingIds = listingIds.append(list_result_obj["LoanInfos"][10 * i + j]['ListingId'])
-            else:
-                break
+            #print(loan_info_list[10 * i + j])
+            listingIds.append(loan_info_list[10 * i + j]['ListingId'])
 
-            detail_result = get_loan_detail_list(listingIds)
-            if detail_result == None:
-                detail_loan_list = detail_result["LoanInfos"]
-                for loan in detail_loan_list:
-                    isSatisfied = checkSpecific_constraints(load)
-                    if isSatisfied == True:
-                        print("success ")
+        detail_result = get_loan_detail_list(listingIds)
+        if detail_result is not None:
+            detail_loan_list = detail_result["LoanInfos"]
+            for loan in detail_loan_list:
+                isSatisfied = checkSpecific_constraints(loan)
+                if isSatisfied == True:
+                    print("success", loan["ListingId"])
+                    #obj = make_bid(loan["ListingId"], 50)
+                    #if obj is not None:
+                    #logging.info("Success to bid %s - %s", loan["CreditCode"], loan["ListingId"])
+                    #print("Success to bid %s - %s" % (loan["CreditCode"], loan["ListingId"]))
+                    trigger_ifttt("bid_aa", loan["ListingId"], loan["CreditCode"], loan["CreditCode"])
 
-bid_specific_constraints()
+
 
 ###
 # tmp bid
@@ -237,7 +278,13 @@ def tmp_bid():
     
 
 print(str(datetime.now()))
-
+while True:
+    try:
+        bid_specific_constraints()
+    # catch all unexpected exceptions
+    except Exception as e:
+        logging.error(e)
+        time.sleep(30)
 
 while False:
     try:
