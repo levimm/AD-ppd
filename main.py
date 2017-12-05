@@ -12,6 +12,7 @@ import os
 import base64
 import logging
 import logging.handlers
+import math
 
 appid="c1cd94864da5425499655ee6d8f38b6e"
 #https://ac.ppdai.com/oauth2/login?AppID=c1cd94864da5425499655ee6d8f38b6e&ReturnUrl=http://antdiaries.com
@@ -67,6 +68,33 @@ def get_loan_list(index, date = None): # date "2015-11-11 12:00:00.000"
         logging.warning("Error: fail to get load list.")
         print("Error: fail to get load list.")
         return None
+
+###
+# get loan detail list
+# parameter
+#[
+#            23886149,
+#            23886150
+#        ]
+###
+def get_loan_detail_list(idList):
+    access_url = "http://gw.open.ppdai.com/invest/LLoanInfoService/BatchListingInfos"
+    data = {
+        "ListingIds": idList
+    }
+    sort_data = rsa.sort(data)
+    sign = rsa.sign(sort_data)
+    list_result = client.send(access_url, json.dumps(data), appid, sign)
+
+    # check result
+    list_result_obj = json.loads(list_result.decode('utf-8'))
+    if list_result_obj["Result"] == 1:
+        return list_result_obj
+    else:
+        logging.warning("Error: fail to get load detail list.")
+        print("Error: fail to get load detail list.")
+        return None
+
 
 
 ###
@@ -146,6 +174,50 @@ def bid_aa():
     return result
 
 
+###
+# checkSpecific_constraints
+###
+
+def checkSpecific_constraints(one_loain):
+    if one_loain["CreditCode"] == "C" and one_loain["Rate"] >= 8:
+        return True
+    else:
+        return False
+
+
+###
+# tmp bid
+###
+def bid_specific_constraints():
+    request_date = str(datetime.now() + timedelta(minutes=-5))
+    init_index = 1
+
+    list_result_obj = get_loan_list(init_index, request_date)
+    loan_list_length = len(list_result_obj["LoanInfos"])
+    listingIds = []
+    query_count = math.ceil(loan_list_length / 10)
+    for i in range(0, query_count):
+        listingIds = []
+        period = loan_list_length - 10*i
+        period_length = 10
+        if period < 10:
+            period_length = period
+
+        for j in range(0, period_length):
+            if list_result_obj["LoanInfos"][10*i+j] is not None:
+                listingIds = listingIds.append(list_result_obj["LoanInfos"][10 * i + j]['ListingId'])
+            else:
+                break
+
+            detail_result = get_loan_detail_list(listingIds)
+            if detail_result == None:
+                detail_loan_list = detail_result["LoanInfos"]
+                for loan in detail_loan_list:
+                    isSatisfied = checkSpecific_constraints(load)
+                    if isSatisfied == True:
+                        print("success ")
+
+bid_specific_constraints()
 
 ###
 # tmp bid
@@ -165,7 +237,9 @@ def tmp_bid():
     
 
 print(str(datetime.now()))
-while True:
+
+
+while False:
     try:
         bid_aa()
         time.sleep(0.1)
