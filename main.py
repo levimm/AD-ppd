@@ -127,7 +127,7 @@ def bid_aa():
 
     while True:
         for i in list_result_obj["LoanInfos"]:
-            if i["CreditCode"] == "AA":
+            if i["CreditCode"] == "AA" and i["Rate"] >= 8:
                 obj = make_bid(i["ListingId"], 500)
                 if obj is not None:
                     logging.info("Success to bid AA %s", i["ListingId"])
