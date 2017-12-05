@@ -11,6 +11,7 @@ from time import gmtime, strftime
 import os
 import base64
 import logging
+import logging.handlers
 
 appid="c1cd94864da5425499655ee6d8f38b6e"
 #https://ac.ppdai.com/oauth2/login?AppID=c1cd94864da5425499655ee6d8f38b6e&ReturnUrl=http://antdiaries.com
@@ -18,7 +19,7 @@ code = "d15ddd6aad244560be73ac7884b98fcc"
 
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.INFO)
-handler = logging.FileHandler('autobid.log', 'r+', 'utf-8')
+handler = logging.handlers.RotatingFileHandler('autobid.log', 'r+', maxBytes=1024*1024, backupCount=100, encoding='utf-8')
 formatter = logging.Formatter('[%(asctime)s] - [%(levelname)s] - %(message)s')
 handler.setFormatter(formatter)
 root_logger.addHandler(handler)
@@ -165,11 +166,16 @@ def tmp_bid():
 
 print(str(datetime.now()))
 while True:
-     bid_aa()
-     time.sleep(0.1)
+    try:
+        bid_aa()
+        time.sleep(0.1)
+    # catch all unexpected exceptions
+    except Exception as e:
+        logging.error(e)
+        time.sleep(30)
 
 
-
+# data = json.load(open('data.json'))
 
 #加密/解密
 # encrypt_data = "ta5346sw34rfe"
