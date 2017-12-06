@@ -20,7 +20,7 @@ code = "d15ddd6aad244560be73ac7884b98fcc"
 
 root_logger= logging.getLogger()
 root_logger.setLevel(logging.INFO)
-handler = logging.handlers.RotatingFileHandler('autobid.log', 'r+', maxBytes=1024*1024, backupCount=100, encoding='utf-8')
+handler = logging.handlers.RotatingFileHandler('riskybid.log', 'r+', maxBytes=1024*1024, backupCount=100, encoding='utf-8')
 formatter = logging.Formatter('[%(asctime)s] - [%(levelname)s] - %(message)s')
 handler.setFormatter(formatter)
 root_logger.addHandler(handler)
@@ -165,7 +165,7 @@ def bid_aa():
                 logging.info("%s - %s", i["CreditCode"], i["ListingId"])
                 print("%s - %s" % (i["CreditCode"], i["ListingId"]))
         
-        if len(list_result_obj) < 2000:
+        if len(list_result_obj["LoanInfos"]) < 2000:
             break
         else:
             init_index = init_index + 1
@@ -177,54 +177,52 @@ def bid_aa():
 ###
 # checkSpecific_constraints
 ###
-
 def checkSpecific_constraints(loan):
-    if loan["CurrentRate"] < 16:
+    if loan["CurrentRate"] < 16 or loan["CurrentRate"] > 20:
         return False
 
     # first filter on educate validate
     if loan["GraduateSchool"] is None:
         return False
 
-    # second filter on OverdueMoreCount
-    if loan["OverdueMoreCount"] > 0:
-        return False
-    if loan["OverdueLessCount"] > 5:
+    # third filter on new guys
+    if loan["NormalCount"] < 5 or loan["SuccessCount"] < 3:
         return False
 
-    # third filter on new guys
-    if loan["NormalCount"] < 3 or loan["SuccessCount"] < 3:
+    # second filter on OverdueCount
+    if loan["OverdueMoreCount"] > 0:
+        return False
+    if loan["OverdueLessCount"] > 5 or loan["OverdueLessCount"]/loan["NormalCount"] > 0.1:
         return False
 
     # fourth filter on large amount
     if loan["OwingAmount"] == 0 and loan["Amount"] >= 5000:
         return False
-    if loan["Amount"] > 10000:
+    if loan["Amount"] > 10000 or loan["OwingAmount"] > 15000:
         return False
     if loan["OwingAmount"]/loan["HighestDebt"] > 0.8:
         return False
     if loan["Amount"]/loan["HighestPrincipal"] > 0.85:
         return False
 
-    # if loan["CreditCode"] == "A":
-    #     #if loan["SuccessCount"] >= 3 and loan["OverdueLessCount"] <= 5 and loan["NormalCount"] >=3
-    #     return True
-    # elif loan["CreditCode"] == "B":
-    #     if loan["SuccessCount"] >= 5 and loan["OverdueLessCount"] <= 3 and loan["NormalCount"] >=5:
-    #         return True
-    # elif loan["CreditCode"] == "C":
-    #     if loan["SuccessCount"] >= 7 and loan["OverdueLessCount"] <= 1 and loan["NormalCount"] >=7:
-    #         return True
-    # else:
-    #     return False
+    if loan["CreditCode"] == "A":
+        return True
+    elif loan["CreditCode"] == "B":
+        if loan["SuccessCount"] >= 5 and loan["OverdueLessCount"] <= 3 and loan["NormalCount"] >=10:
+            return True
+    elif loan["CreditCode"] == "C":
+        if loan["SuccessCount"] >= 5 and loan["OverdueLessCount"] <= 1 and loan["NormalCount"] >=15:
+            return True
+    else:
+        return False
 
-    return True
+    return False
 
 ###
-# tmp bid
+# bid risky
 ###
 def bid_specific_constraints():
-    request_date = str(datetime.now() + timedelta(minutes=-10))
+    request_date = str(datetime.now() + timedelta(minutes=-5))
     init_index = 1
 
     list_result_obj = get_loan_list(init_index, request_date)
@@ -242,58 +240,49 @@ def bid_specific_constraints():
             period_length = period
 
         for j in range(0, period_length):
-            #print(loan_info_list[10 * i + j])
-            listingIds.append(loan_info_list[10 * i + j]['ListingId'])
+            # only query detail for A, B, C bid with amount less then 10000
+            if loan_info_list[10 * i + j]["CreditCode"] == "A" or loan_info_list[10 * i + j]["CreditCode"] == "B" or loan_info_list[10 * i + j]["CreditCode"] == "C":
+                if loan_info_list[10 * i + j]["Amount"] <= 10000 and loan_info_list[10 * i + j]["RemainFunding"]/loan_info_list[10 * i + j]["Amount"] >= 0.05:
+                    listingIds.append(loan_info_list[10 * i + j]['ListingId'])
 
-        detail_result = get_loan_detail_list(listingIds)
-        if detail_result is not None:
-            detail_loan_list = detail_result["LoanInfos"]
-            for loan in detail_loan_list:
-                isSatisfied = checkSpecific_constraints(loan)
-                if isSatisfied == True:
-                    print("success", loan["ListingId"])
-                    #obj = make_bid(loan["ListingId"], 50)
-                    #if obj is not None:
-                    #logging.info("Success to bid %s - %s", loan["CreditCode"], loan["ListingId"])
-                    #print("Success to bid %s - %s" % (loan["CreditCode"], loan["ListingId"]))
-                    trigger_ifttt("bid_aa", loan["ListingId"], loan["CreditCode"], loan["CreditCode"])
-
-
-
-###
-# tmp bid
-###
-def tmp_bid():
-    request_date = str(datetime.now() + timedelta(minutes=-5))
-    init_index = 1
-    list_result_obj = get_loan_list(init_index, request_date)
-
-    if len(list_result_obj["LoanInfos"]) == 0:
-        logging.info("Empty Loan list.")
-        print("Empty Loan list %s" % str(datetime.now()))
-        return None
-
-    bid_list = list_result_obj["LoanInfos"]
-    obj = make_bid(bid_list[0]["ListingId"], -1)
-    
+        if len(listingIds) > 0:
+            detail_result = get_loan_detail_list(listingIds)
+            if detail_result is not None:
+                detail_loan_list = detail_result["LoanInfos"]
+                for loan in detail_loan_list:
+                    if loan["RemainFunding"] < 50:
+                        continue
+                    isSatisfied = checkSpecific_constraints(loan)
+                    if isSatisfied == True:
+                        print("Trying to bid", loan["ListingId"])
+                        logging.info("Trying to bid %s with %s left amount", loan["ListingId"], loan["RemainFunding"])
+                        obj = make_bid(loan["ListingId"], 50)
+                        if obj is not None:
+                            logging.info("Success to bid %s - %s", loan["CreditCode"], loan["ListingId"])
+                            print("Success to bid %s - %s" % (loan["CreditCode"], loan["ListingId"]))
+                            trigger_ifttt("bid_risky", loan["ListingId"], loan["CreditCode"], obj["ParticipationAmount"])
+                    else:
+                        print("Not qualified bid", loan["ListingId"])
+                        logging.info("Not qualified bid %s", loan["ListingId"])
 
 print(str(datetime.now()))
 while True:
     try:
         bid_specific_constraints()
-    # catch all unexpected exceptions
-    except Exception as e:
-        logging.error(e)
-        time.sleep(30)
-
-while False:
-    try:
-        bid_aa()
         time.sleep(0.1)
     # catch all unexpected exceptions
     except Exception as e:
         logging.error(e)
         time.sleep(30)
+
+# while False:
+#     try:
+#         bid_aa()
+#         time.sleep(0.1)
+#     # catch all unexpected exceptions
+#     except Exception as e:
+#         logging.error(e)
+#         time.sleep(30)
 
 
 # data = json.load(open('data.json'))

@@ -56,9 +56,14 @@ class openapi_client:
             headers["X-PPD-ACCESSTOKEN"] = accesstoken
         status_code, response_str = http_client.http_post(url,data.encode('utf-8'),headers=headers)
 
+        retry_count = 0
         while status_code != 200 or response_str is None:
             print("Servie unavailable for a while:", status_code)
-            time.sleep(10)
+            retry_count = retry_count + 1
+            time.sleep(10 * retry_count)
+            if retry_count >= 60:
+                logging.warning("Service failed for a long time. Please check!")
+                print("Service failed for a long time. Please check!")
             status_code, response_str = http_client.http_post(url,data.encode('utf-8'),headers=headers)
         
         return response_str
