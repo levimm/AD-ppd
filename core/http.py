@@ -1,6 +1,7 @@
 #coding=utf-8
 import urllib
 import urllib.request
+import logging
 
 class http_client:
 
@@ -19,7 +20,7 @@ class http_client:
     def http_post(url,data,headers={}):
         try:
             req = urllib.request.Request(url)
-            # print(req)
+
             for header in http_client.REQUEST_HEADER:
                 req.add_header(header, http_client.REQUEST_HEADER[header])
 
@@ -39,6 +40,6 @@ class http_client:
 #             data = StringIO.StringIO(response.read())
 #             gzipper = gzip.GzipFile(fileobj=data)
 #             return gzipper.read()
-        except Exception as ex:
-            print (ex)
+        except:
+            logging.error("hhhhhh")
             return None, None
